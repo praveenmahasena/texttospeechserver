@@ -37,7 +37,8 @@ func New(file []byte) *Transcript {
 func (t *Transcript) UploadMediaFile() error {
 
 	url := viper.GetString(mediaUploadLinkParam)
-	req, reqErr := http.NewRequest("POST", url, "https://api.assemblyai.com/v2/upload", bytes.NewReader(t.File))
+
+	req, reqErr := http.NewRequest("POST", url, bytes.NewReader(t.File))
 
 	if reqErr != nil {
 		fmt.Println("here")
