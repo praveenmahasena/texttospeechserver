@@ -40,31 +40,40 @@ func (l Listner) Run() error {
 
 func handleCon(con net.Conn) {
 
-	wg := sync.WaitGroup{}
-	wg.Add(2)
-	defer wg.Wait()
-
 	file := make(chan []byte)
 
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
 	go func(c net.Conn, f chan<- []byte, wg *sync.WaitGroup) {
-		b, err := io.ReadAll(con)
+		b, err := io.ReadAll(c)
 		if err != nil {
 			fmt.Println(err)
-			return
 		}
 		f <- b
-	}(con, file, &wg)
-
-	close(file)
+		fmt.Println(b)
+		close(f)
+	}(con, file, wg)
 
 	txt, err := getTransScript(file)
-	fmt.Println(err)
 
+	if err != nil {
+		con.Write([]byte("internal Error"))
+		con.Close()
+		return
+	}
+
+	wg.Add(1)
 	go func(c net.Conn, wg *sync.WaitGroup) {
 		defer wg.Done()
-		n, errN := io.WriteString(c, txt)
+		n, errN := c.Write([]byte(txt))
+		fmt.Println(txt)
 		fmt.Println(n, errN)
-	}(con, &wg)
+		con.Close()
+	}(con, wg)
+
+	wg.Wait()
+
+	fmt.Println("came here finally")
 
 	con.Close()
 }

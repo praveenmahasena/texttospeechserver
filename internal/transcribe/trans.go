@@ -19,8 +19,7 @@ type Transcript struct {
 }
 
 const (
-	mediaUploadLinkParam = "MEDIAUPLOADLINK"
-	tokenParam           = "TOKEN"
+	tokenParam = "TOKEN"
 )
 
 func New(file []byte) *Transcript {
@@ -36,12 +35,9 @@ func New(file []byte) *Transcript {
 
 func (t *Transcript) UploadMediaFile() error {
 
-	url := viper.GetString(mediaUploadLinkParam)
-
-	req, reqErr := http.NewRequest("POST", url, bytes.NewReader(t.File))
+	req, reqErr := http.NewRequest("POST", "https://api.assemblyai.com/v2/upload", bytes.NewBuffer(t.File))
 
 	if reqErr != nil {
-		fmt.Println("here")
 		return reqErr
 	}
 
@@ -61,7 +57,9 @@ func (t *Transcript) UploadMediaFile() error {
 
 	defer res.Body.Close()
 
-	err := json.NewDecoder(res.Body).Decode(t)
+	err := json.NewDecoder(res.Body).Decode(&t)
+
+	fmt.Println(t.Token)
 
 	return err
 }
@@ -75,7 +73,7 @@ func (t *Transcript) TranscribeRes() error {
 		return bErr
 	}
 
-	req, reqErr := http.NewRequest("POST", "https://api.assemblyai.com/v2/transcript", bytes.NewReader(b))
+	req, reqErr := http.NewRequest("POST", "https://api.assemblyai.com/v2/transcript", bytes.NewBuffer(b))
 
 	req.Header.Set("Authorization", t.Token)
 	req.Header.Set("Content-Type", "application/json")
@@ -101,7 +99,6 @@ func (t *Transcript) TranscribeRes() error {
 }
 
 func (t *Transcript) GetTransStr() (string, error) {
-	fmt.Println(t.ID)
 	req, reqErr := http.NewRequest("GET", "https://api.assemblyai.com/v2/transcript/"+t.ID, nil)
 
 	if reqErr != nil {
